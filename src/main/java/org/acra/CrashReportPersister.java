@@ -27,6 +27,8 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -60,6 +62,22 @@ final class CrashReportPersister {
      */
     public CrashReportData load(String fileName) throws IOException {
 
+        // read throwable
+        Throwable throwable;
+        final FileInputStream throwableIn = context.openFileInput(getThrowableFileName(fileName));
+        try {
+            ObjectInputStream oInputStream = new ObjectInputStream(throwableIn);
+            try {
+                throwable = (Throwable) oInputStream.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Invalid crash report throwable : " + getThrowableFileName(fileName));
+            }
+        } finally {
+            throwableIn.close();
+        }
+
+        CrashReportData data = new CrashReportData(throwable);
+
         final FileInputStream in = context.openFileInput(fileName);
         if (in == null) {
             throw new IllegalArgumentException("Invalid crash report fileName : " + fileName);
@@ -72,9 +90,9 @@ final class CrashReportPersister {
             bis.reset();
 
             if (!isEbcdic) {
-                return load(new InputStreamReader(bis, "ISO8859-1")); //$NON-NLS-1$
+                return load(data, new InputStreamReader(bis, "ISO8859-1")); //$NON-NLS-1$
             } else {
-                return load(new InputStreamReader(bis)); //$NON-NLS-1$
+                return load(data, new InputStreamReader(bis)); //$NON-NLS-1$
             }
         } finally {
             in.close();
@@ -109,6 +127,17 @@ final class CrashReportPersister {
             writer.flush();
         } finally {
             out.close();
+        }
+
+        // persist the throwable
+        final OutputStream throwableOut = context.openFileOutput(getThrowableFileName(fileName), Context.MODE_PRIVATE);
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(throwableOut);
+            os.writeObject(crashData.getThrowable());
+            os.flush();
+            os.close();
+        } finally {
+            throwableOut.close();
         }
     }
 
@@ -153,18 +182,19 @@ final class CrashReportPersister {
      * "\!", "\#", "\t", "\b", "\f", and "&#92;uXXXX" (unicode character).</li>
      * </ul>
      *
+     *
+     * @param crashData The CrashReportData object to fill.
      * @param reader    Reader from which to read the properties of this CrashReportData.
      * @return CrashReportData read from the supplied Reader.
      * @throws java.io.IOException if the properties could not be read.
      * @since 1.6
      */
-    private synchronized CrashReportData load(Reader reader) throws IOException {
+    private synchronized CrashReportData load(CrashReportData crashData, Reader reader) throws IOException {
         int mode = NONE, unicode = 0, count = 0;
         char nextChar, buf[] = new char[40];
         int offset = 0, keyLength = -1, intVal;
         boolean firstChar = true;
 
-        final CrashReportData crashData = new CrashReportData();
         final BufferedReader br = new BufferedReader(reader, ACRAConstants.DEFAULT_BUFFER_SIZE_IN_BYTES);
 
         while (true) {
@@ -370,5 +400,11 @@ final class CrashReportPersister {
                 }
             }
         }
+    }
+
+    public static String getThrowableFileName(String crashFileName) {
+        crashFileName = crashFileName.replace(ACRAConstants.APPROVED_SUFFIX, "");
+        crashFileName = crashFileName.replace(ACRAConstants.SILENT_SUFFIX, "");
+        return crashFileName + ".throwable";
     }
 }

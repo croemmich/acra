@@ -161,7 +161,7 @@ public final class CrashReportDataFactory {
      *         at the instant of the Exception.
      */
     public CrashReportData createCrashData(Throwable th, boolean isSilentReport, Thread brokenThread) {
-        final CrashReportData crashReportData = new CrashReportData();
+        final CrashReportData crashReportData = new CrashReportData(th);
         try {
             final List<ReportField> crashReportFields = getReportFields();
 

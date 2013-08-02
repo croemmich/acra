@@ -140,14 +140,17 @@ final class SendWorker extends Thread {
                 final CrashReportData previousCrashReport = persister.load(curFileName);
                 sendCrashReport(previousCrashReport);
                 deleteFile(context, curFileName);
+                deleteFile(context, CrashReportPersister.getThrowableFileName(curFileName));
             } catch (RuntimeException e) {
                 Log.e(ACRA.LOG_TAG, "Failed to send crash reports for " + curFileName, e);
                 deleteFile(context, curFileName);
+                deleteFile(context, CrashReportPersister.getThrowableFileName(curFileName));
                 break; // Something really unexpected happened. Don't try to
                        // send any more reports now.
             } catch (IOException e) {
                 Log.e(ACRA.LOG_TAG, "Failed to load crash report for " + curFileName, e);
                 deleteFile(context, curFileName);
+                deleteFile(context, CrashReportPersister.getThrowableFileName(curFileName));
                 break; // Something unexpected happened when reading the crash
                        // report. Don't try to send any more reports now.
             } catch (ReportSenderException e) {
