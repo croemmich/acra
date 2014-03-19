@@ -39,14 +39,14 @@
 
     <distributionManagement>
         <repository>
-            <id>nexus.cr-wd.com</id>
+            <id>nexus.logicalgrape.com</id>
             <name>Releases</name>
-            <url>http://nexus.cr-wd.com/content/repositories/releases/</url>
+            <url>http://nexus.logicalgrape.com/content/repositories/releases/</url>
         </repository>
         <snapshotRepository>
-            <id>nexus.cr-wd.com</id>
+            <id>nexus.logicalgrape.com</id>
             <name>Snapshots</name>
-            <url>http://nexus.cr-wd.com/content/repositories/snapshots/</url>
+            <url>http://nexus.logicalgrape.com/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
